@@ -4,7 +4,6 @@
     "outputDirectory": ".next",
     "installCommand": "npm install",
     "env": {},
-    "envPrefix": "NEXT_PUBLIC_",
     "functions": {
         "api/**/*.ts": {
             "maxDuration": 10
