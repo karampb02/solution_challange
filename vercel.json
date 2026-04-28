@@ -2,7 +2,27 @@
     "version": 2,
     "buildCommand": "npm run build",
     "outputDirectory": ".next",
+    "nodeVersion": "20.x",
+    "installCommand": "npm install",
     "env": {},
     "envPrefix": "NEXT_PUBLIC_",
-    "nodeVersion": "18.x"
+    "functions": {
+        "api/**/*.ts": {
+            "maxDuration": 10
+        }
+    },
+    "regions": [
+        "auto"
+    ],
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "Cache-Control",
+                    "value": "public, max-age=3600, must-revalidate"
+                }
+            ]
+        }
+    ]
 }
