@@ -2,7 +2,6 @@
     "version": 2,
     "buildCommand": "npm run build",
     "outputDirectory": ".next",
-    "nodeVersion": "20.x",
     "installCommand": "npm install",
     "env": {},
     "envPrefix": "NEXT_PUBLIC_",
