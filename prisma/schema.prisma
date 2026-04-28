@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Candidate {
+  id            String   @id @default(cuid())
+  name          String
+  avatar        String
+  title         String
+  location      String
+  matchScore    Int
+  cultureScore  Int
+  skills        String[]
+  highlight     String
+  availability  String   // "available" | "open" | "busy"
+  source        String   // "github" | "linkedin" | "referral"
+  experience    String
+  
+  // Vector embedding for semantic search
+  embedding     Unsupported("vector")?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  matchedSignals SignalMatch[]
+  
+  @@index([matchScore])
+  @@index([cultureScore])
+}
+
+model Signal {
+  id            String   @id @default(cuid())
+  type          String   // "jira" | "github" | "slack" | "linear"
+  title         String
+  description   String
+  timestamp     DateTime
+  urgency       String   // "low" | "medium" | "high" | "critical"
+  status        String   // "new" | "processing" | "matched" | "acted"
+  matchCount    Int      @default(0)
+  source        String
+  
+  // Vector embedding for semantic search
+  embedding     Unsupported("vector")?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  matchedCandidates SignalMatch[]
+  
+  @@index([status])
+  @@index([urgency])
+}
+
+model SignalMatch {
+  id            String   @id @default(cuid())
+  signalId      String
+  candidateId   String
+  matchScore    Float    // Similarity score from vector search
+  
+  signal        Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+  candidate     Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  
+  createdAt     DateTime @default(now())
+  
+  @@unique([signalId, candidateId])
+  @@index([matchScore])
+}
+
+model CultureDimension {
+  id            String   @id @default(cuid())
+  label         String   @unique
+  teamScore     Int
+  description   String
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Activity {
+  id            String   @id @default(cuid())
+  type          String
+  title         String
+  description   String
+  timestamp     DateTime
+  metadata      Json?
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([timestamp])
+}
+
+model InterviewPrep {
+  id               String   @id @default(cuid())
+  candidateId      String
+  candidateName    String
+  role             String
+  time             DateTime
+  matchedProject   String
+  questions        String[]
+  insights         String[]
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
