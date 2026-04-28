@@ -1,36 +1,175 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TalentAI - Solution Challenge
+
+A modern Next.js 16 application with a comprehensive dashboard for talent management and recruiting analytics.
+
+## Tech Stack
+
+- **Framework**: Next.js 16.2.4 with Turbopack
+- **Language**: TypeScript 5
+- **Styling**: Tailwind CSS 4
+- **UI Components**: Lucide React
+- **Animations**: Framer Motion
+- **Charts**: Recharts
+- **Runtime**: Node.js 18+
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── dashboard/          # Dashboard routes and pages
+│   │   ├── activity/
+│   │   ├── candidates/
+│   │   ├── culture/
+│   │   ├── interviews/
+│   │   └── signals/
+│   ├── layout.tsx         # Root layout
+│   ├── page.tsx           # Landing page
+│   └── globals.css
+├── components/
+│   ├── dashboard/         # Dashboard-specific components
+│   ├── Features.tsx
+│   ├── Footer.tsx
+│   ├── Hero.tsx
+│   ├── HowItWorks.tsx
+│   ├── Integrations.tsx
+│   ├── Navbar.tsx
+│   ├── Testimonials.tsx
+│   └── TrustedBy.tsx
+└── lib/
+    └── mock-data.ts       # Mock data for dashboard
+```
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18.17 or later
+- npm, yarn, or pnpm
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/karampb02/solution_challange.git
+cd solution_challange
+```
+
+2. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+### Development
+
+Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The application will hot-reload as you edit files.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Building
+
+To create an optimized production build:
+
+```bash
+npm run build
+```
+
+### Production
+
+To start the production server:
+
+```bash
+npm run start
+```
+
+## Deployment on Vercel
+
+This project is optimized for deployment on Vercel, the platform built by the creators of Next.js.
+
+### Automatic Deployment
+
+The easiest way to deploy is using the [Vercel Platform](https://vercel.com):
+
+1. Push your code to GitHub
+2. Import the project in Vercel dashboard
+3. Vercel will automatically detect it's a Next.js project and configure the build settings
+4. Your app will be deployed at `https://your-project.vercel.app`
+
+### Manual Deployment
+
+1. Install Vercel CLI:
+```bash
+npm i -g vercel
+```
+
+2. Deploy:
+```bash
+vercel
+```
+
+### Environment Variables
+
+If you need environment variables in production, add them in the Vercel dashboard under:
+**Settings → Environment Variables**
+
+### Build Settings
+
+The following settings are automatically configured:
+- **Build Command**: `npm run build`
+- **Output Directory**: `.next`
+- **Node.js Version**: 18.x (or specify in `vercel.json`)
+
+### Troubleshooting Vercel Deployment
+
+**Issue: Build fails on Vercel but works locally**
+- Clear `.next` folder locally and rebuild
+- Ensure all dependencies are in `package.json`
+- Check Node.js version compatibility (18+ required)
+- Verify environment variables are set
+
+**Issue: TypeScript errors during build**
+- The project includes strict TypeScript settings
+- Ensure all components have proper type annotations
+- Run `npm run build` locally to catch errors before pushing
+
+**Issue: Missing dependencies**
+- Run `npm install` to ensure all packages are installed
+- Commit `package-lock.json` to git
+
+## Features
+
+- **Dashboard Pages**:
+  - Activity tracking
+  - Candidate management
+  - Culture analytics
+  - Interview scheduling
+  - Signal tracking
+
+- **Responsive Design**: Mobile-first approach with Tailwind CSS
+- **Performance**: Optimized with Turbopack and static generation
+- **Analytics**: Real-time charts and data visualization
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Vercel Deployment Guide](https://vercel.com/docs/frameworks/nextjs)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+This project is part of the Solution Challenge.
 
-## Deploy on Vercel
+## Support
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For issues and questions, please refer to the [project repository](https://github.com/karampb02/solution_challange).
