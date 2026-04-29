@@ -1,225 +1,100 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Radar,
-  GitPullRequest,
-  MessageSquare,
-  Zap,
-  Users,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  Loader2,
-  ChevronDown,
-  Sparkles,
-  ArrowRight,
-} from "lucide-react";
-import { signals } from "@/lib/mock-data";
-
-const signalIcons = {
-  jira: Radar,
-  github: GitPullRequest,
-  slack: MessageSquare,
-  linear: Zap,
-};
-
-const signalColors = {
-  jira: "#10b981",
-  github: "#8b5cf6",
-  slack: "#06b6d4",
-  linear: "#f59e0b",
-};
-
-const statusConfig = {
-  new: {
-    icon: AlertTriangle,
-    label: "New",
-    color: "#f59e0b",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
-  },
-  processing: {
-    icon: Loader2,
-    label: "Processing",
-    color: "#06b6d4",
-    bg: "bg-cyan-500/10",
-    border: "border-cyan-500/20",
-  },
-  matched: {
-    icon: CheckCircle2,
-    label: "Matched",
-    color: "#10b981",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-  },
-  acted: {
-    icon: Sparkles,
-    label: "Acted",
-    color: "#8b5cf6",
-    bg: "bg-violet-500/10",
-    border: "border-violet-500/20",
-  },
-};
-
-const urgencyOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+import { useEffect, useMemo, useState } from "react";
+import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import { getSignals, type Signal } from "@/lib/api-client";
 
 export default function SignalsPage() {
-  const [filter, setFilter] = useState<string>("all");
-  const [expanded, setExpanded] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [signals, setSignals] = useState<Signal[]>([]);
+    const [filter, setFilter] = useState<"all" | "high" | "critical">("all");
 
-  const filtered =
-    filter === "all"
-      ? signals
-      : signals.filter((s) => s.type === filter);
+    useEffect(() => {
+        let mounted = true;
 
-  const sorted = [...filtered].sort(
-    (a, b) => urgencyOrder[a.urgency] - urgencyOrder[b.urgency]
-  );
+        async function load() {
+            try {
+                const response = await getSignals(50, 0);
+                if (mounted) setSignals(response.data);
+            } catch (error) {
+                console.error("Signals load error", error);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        }
 
-  return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="text-2xl font-bold flex items-center gap-3">
-          <Radar className="w-7 h-7 text-violet-400" />
-          Signal Intelligence
-        </h1>
-        <p className="text-sm text-[#55556a] mt-1">
-          Real-time signals captured from your integrations. TalentAI
-          automatically detects hiring needs and skill gaps.
-        </p>
-      </motion.div>
+        load();
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
-      {/* Filters */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="flex flex-wrap gap-2"
-      >
-        {[
-          { key: "all", label: "All Signals", count: signals.length },
-          { key: "jira", label: "Jira", count: signals.filter((s) => s.type === "jira").length },
-          { key: "github", label: "GitHub", count: signals.filter((s) => s.type === "github").length },
-          { key: "slack", label: "Slack", count: signals.filter((s) => s.type === "slack").length },
-          { key: "linear", label: "Linear", count: signals.filter((s) => s.type === "linear").length },
-        ].map((f) => (
-          <button
-            key={f.key}
-            onClick={() => setFilter(f.key)}
-            className={`flex items-center gap-2 text-xs px-4 py-2 rounded-full border transition-all duration-200 ${
-              filter === f.key
-                ? "bg-violet-600/15 text-violet-300 border-violet-500/30"
-                : "bg-white/[0.02] text-[#55556a] border-white/[0.06] hover:text-[#8888a0] hover:border-white/[0.1]"
-            }`}
-          >
-            {f.label}
-            <span className="text-[10px] opacity-60">{f.count}</span>
-          </button>
-        ))}
-      </motion.div>
+    const filtered = useMemo(() => {
+        if (filter === "all") return signals;
+        return signals.filter((signal) => signal.urgency === filter);
+    }, [signals, filter]);
 
-      {/* Signal List */}
-      <div className="space-y-3">
-        {sorted.map((signal, i) => {
-          const Icon = signalIcons[signal.type];
-          const color = signalColors[signal.type];
-          const status = statusConfig[signal.status];
-          const StatusIcon = status.icon;
-          const isExpanded = expanded === signal.id;
+    return (
+        <div className="mx-auto max-w-5xl space-y-6">
+            <header>
+                <h1 className="text-2xl font-semibold tracking-tight">Signals</h1>
+                <p className="mt-1 text-sm text-[#8b8ba3]">Live demand signals from your integrations.</p>
+            </header>
 
-          return (
-            <motion.div
-              key={signal.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 + i * 0.06 }}
-              className="glass-card overflow-hidden"
-            >
-              <button
-                onClick={() => setExpanded(isExpanded ? null : signal.id)}
-                className="w-full p-5 flex items-start gap-4 text-left"
-              >
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: `${color}15` }}
-                >
-                  <Icon className="w-5 h-5" style={{ color }} />
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="text-sm font-semibold">{signal.title}</h3>
-                    <span
-                      className={`badge text-[10px] py-0 px-2 ${status.bg} ${status.border} border`}
-                      style={{ color: status.color }}
+            <div className="flex gap-2">
+                {["all", "high", "critical"].map((item) => (
+                    <button
+                        key={item}
+                        onClick={() => setFilter(item as "all" | "high" | "critical")}
+                        className={`rounded-full border px-3 py-1.5 text-xs uppercase tracking-wide transition ${filter === item ? "border-[#4fb1ff]/40 bg-[#4fb1ff]/10" : "border-white/10 bg-white/[0.02]"
+                            }`}
                     >
-                      <StatusIcon
-                        className={`w-3 h-3 ${
-                          signal.status === "processing" ? "animate-spin" : ""
-                        }`}
-                      />
-                      {status.label}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-[10px] text-[#55556a]">
-                    <span>{signal.timestamp}</span>
-                    <span className="font-mono">{signal.source}</span>
-                    {signal.matchCount && (
-                      <span className="text-violet-400 flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        {signal.matchCount} candidates
-                      </span>
-                    )}
-                  </div>
-                </div>
+                        {item}
+                    </button>
+                ))}
+            </div>
 
-                <ChevronDown
-                  className={`w-4 h-4 text-[#55556a] shrink-0 transition-transform duration-200 ${
-                    isExpanded ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
+            <section className="space-y-2">
+                {loading && <p className="text-sm text-[#8b8ba3]">Loading signals...</p>}
+                {!loading && filtered.length === 0 && <p className="text-sm text-[#8b8ba3]">No signals found.</p>}
 
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="px-5 pb-5 pt-0 ml-14">
-                      <div className="p-4 rounded-xl bg-white/[0.02] border border-white/[0.04]">
-                        <p className="text-sm text-[#8888a0] leading-relaxed mb-4">
-                          <Sparkles className="w-4 h-4 text-violet-400 inline mr-2" />
-                          <span className="text-xs text-[#55556a]">
-                            Gemini Analysis:
-                          </span>
-                          <br />
-                          {signal.description}
-                        </p>
-                        {signal.matchCount && signal.matchCount > 0 && (
-                          <button className="text-xs font-medium text-violet-400 hover:text-violet-300 flex items-center gap-1.5 transition-colors">
-                            View {signal.matchCount} matched candidates
-                            <ArrowRight className="w-3 h-3" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          );
-        })}
-      </div>
-    </div>
-  );
+                {filtered.map((signal) => {
+                    const highPriority = signal.urgency === "high" || signal.urgency === "critical";
+
+                    return (
+                        <article key={signal.id} className="glass-card p-4">
+                            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                                <h2 className="text-sm font-semibold">{signal.title}</h2>
+                                <div className="flex items-center gap-2">
+                                    <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase text-[#9a9ab2]">
+                                        {signal.status}
+                                    </span>
+                                    <span
+                                        className={`rounded-full border px-2 py-0.5 text-[10px] uppercase ${highPriority ? "border-[#ff9266]/40 text-[#ffb18e]" : "border-white/10 text-[#9a9ab2]"
+                                            }`}
+                                    >
+                                        {signal.urgency}
+                                    </span>
+                                </div>
+                            </div>
+                            <p className="text-sm text-[#cfcfe0]">{signal.description}</p>
+                            <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-[#8b8ba3]">
+                                <span>{new Date(signal.timestamp).toLocaleString()}</span>
+                                <span>{signal.source}</span>
+                                {signal.status === "processing" && (
+                                    <span className="inline-flex items-center gap-1 text-[#82cfff]"><Loader2 className="h-3 w-3 animate-spin" />processing</span>
+                                )}
+                                {signal.status === "matched" && (
+                                    <span className="inline-flex items-center gap-1 text-[#7ce9b4]"><CheckCircle2 className="h-3 w-3" />matched</span>
+                                )}
+                                {signal.status === "new" && (
+                                    <span className="inline-flex items-center gap-1 text-[#ffb18e]"><AlertTriangle className="h-3 w-3" />new</span>
+                                )}
+                            </div>
+                        </article>
+                    );
+                })}
+            </section>
+        </div>
+    );
 }

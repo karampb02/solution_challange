@@ -1,221 +1,132 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { CalendarClock, MessageSquare, Sparkles } from "lucide-react";
 import {
-  CalendarClock,
-  Sparkles,
-  Star,
-  MessageSquare,
-  Code2,
-  BookOpen,
-  Clock,
-  MapPin,
-  ExternalLink,
-} from "lucide-react";
-import { interviewPrep, candidates } from "@/lib/mock-data";
+    getCandidates,
+    getInterviews,
+    type Candidate,
+    type InterviewPrep,
+} from "@/lib/api-client";
 
 export default function InterviewsPage() {
-  const candidate = candidates[0]; // Sarah Chen
+    const [loading, setLoading] = useState(true);
+    const [interviews, setInterviews] = useState<InterviewPrep[]>([]);
+    const [candidates, setCandidates] = useState<Candidate[]>([]);
 
-  return (
-    <div className="max-w-5xl mx-auto space-y-8">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        <h1 className="text-2xl font-bold flex items-center gap-3">
-          <CalendarClock className="w-7 h-7 text-amber-400" />
-          Interview Prep
-        </h1>
-        <p className="text-sm text-[#55556a] mt-1">
-          Auto-generated interview cheat sheets, delivered 15 minutes before
-          each meeting. Zero prep required.
-        </p>
-      </motion.div>
+    useEffect(() => {
+        let mounted = true;
 
-      {/* Upcoming interview banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="glass-card gradient-border p-6 relative overflow-hidden"
-      >
-        <div className="absolute inset-0 shimmer" />
-        <div className="relative z-10 flex items-start justify-between flex-wrap gap-4">
-          <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center text-lg font-bold text-white shrink-0">
-              {candidate.avatar}
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h2 className="text-lg font-bold">
-                  {interviewPrep.candidateName}
-                </h2>
-                <span className="badge badge-amber text-[10px]">
-                  <Clock className="w-3 h-3" />
-                  Upcoming
-                </span>
-              </div>
-              <p className="text-sm text-[#8888a0]">{interviewPrep.role}</p>
-              <div className="flex items-center gap-4 mt-2 text-xs text-[#55556a]">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {interviewPrep.time}
-                </span>
-                <span className="flex items-center gap-1">
-                  <MapPin className="w-3 h-3" />
-                  {candidate.location}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-sm text-[#55556a] mb-1">Matched to</div>
-            <span className="badge badge-violet">
-              <Code2 className="w-3 h-3" />
-              {interviewPrep.matchedProject}
-            </span>
-          </div>
+        async function load() {
+            try {
+                const [interviewsRes, candidatesRes] = await Promise.all([
+                    getInterviews(20, 0),
+                    getCandidates(50, 0),
+                ]);
+
+                if (!mounted) return;
+                setInterviews(interviewsRes.data);
+                setCandidates(candidatesRes.data);
+            } catch (error) {
+                console.error("Interviews load error", error);
+            } finally {
+                if (mounted) setLoading(false);
+            }
+        }
+
+        load();
+        return () => {
+            mounted = false;
+        };
+    }, []);
+
+    const nextInterview = useMemo(() => {
+        return [...interviews].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())[0];
+    }, [interviews]);
+
+    const selectedCandidate = candidates.find((c) => c.id === nextInterview?.candidateId);
+
+    return (
+        <div className="mx-auto max-w-5xl space-y-6">
+            <header>
+                <h1 className="text-2xl font-semibold tracking-tight">Interview Prep</h1>
+                <p className="mt-1 text-sm text-[#8b8ba3]">
+                    Clean, focused prep cards with role context and AI-generated prompts.
+                </p>
+            </header>
+
+            {loading && <p className="text-sm text-[#8b8ba3]">Loading interview plans...</p>}
+
+            {!loading && !nextInterview && (
+                <article className="glass-card p-5 text-sm text-[#8b8ba3]">No interviews scheduled yet.</article>
+            )}
+
+            {nextInterview && (
+                <section className="grid gap-4 lg:grid-cols-5">
+                    <article className="glass-card p-5 lg:col-span-3">
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-xs uppercase tracking-wide text-[#8b8ba3]">Next Interview</p>
+                                <h2 className="mt-1 text-xl font-semibold">{nextInterview.candidateName}</h2>
+                                <p className="text-sm text-[#8b8ba3]">{nextInterview.role}</p>
+                            </div>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-[#8b8ba3]">
+                                <CalendarClock className="h-3 w-3" />
+                                {new Date(nextInterview.time).toLocaleString()}
+                            </span>
+                        </div>
+
+                        <div>
+                            <p className="mb-2 text-[11px] uppercase tracking-wide text-[#8b8ba3]">Suggested Questions</p>
+                            <div className="space-y-2">
+                                {nextInterview.questions.map((question, index) => (
+                                    <div key={question} className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-sm text-[#d5d5e6]">
+                                        <span className="mr-2 text-xs text-[#8b8ba3]">Q{index + 1}.</span>
+                                        {question}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </article>
+
+                    <aside className="space-y-4 lg:col-span-2">
+                        <article className="glass-card p-5">
+                            <p className="mb-2 text-[11px] uppercase tracking-wide text-[#8b8ba3]">Matched Project</p>
+                            <p className="text-sm font-medium">{nextInterview.matchedProject}</p>
+                        </article>
+
+                        <article className="glass-card p-5">
+                            <p className="mb-2 text-[11px] uppercase tracking-wide text-[#8b8ba3]">AI Insights</p>
+                            <div className="space-y-2">
+                                {nextInterview.insights.map((insight) => (
+                                    <p key={insight} className="text-sm text-[#d5d5e6]">
+                                        <Sparkles className="mr-2 inline h-3.5 w-3.5 text-[#82cfff]" />
+                                        {insight}
+                                    </p>
+                                ))}
+                            </div>
+                        </article>
+
+                        <article className="glass-card p-5">
+                            <p className="mb-2 text-[11px] uppercase tracking-wide text-[#8b8ba3]">Candidate Context</p>
+                            {!selectedCandidate && <p className="text-sm text-[#8b8ba3]">Candidate metadata unavailable.</p>}
+                            {selectedCandidate && (
+                                <div className="space-y-1.5 text-sm text-[#d5d5e6]">
+                                    <p>{selectedCandidate.title}</p>
+                                    <p className="text-[#8b8ba3]">{selectedCandidate.location}</p>
+                                    <p className="text-[#8b8ba3]">{selectedCandidate.experience} experience</p>
+                                    <p className="pt-1 text-[#7ce9b4]">Match score: {selectedCandidate.matchScore}%</p>
+                                </div>
+                            )}
+                        </article>
+
+                        <article className="glass-card p-5 text-sm text-[#8b8ba3]">
+                            <MessageSquare className="mb-2 h-4 w-4 text-[#82cfff]" />
+                            Interview notes can be sent to Slack after the meeting.
+                        </article>
+                    </aside>
+                </section>
+            )}
         </div>
-      </motion.div>
-
-      <div className="grid lg:grid-cols-5 gap-6">
-        {/* Questions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="lg:col-span-3 glass-card p-6"
-        >
-          <div className="flex items-center gap-2 mb-6">
-            <Sparkles className="w-5 h-5 text-violet-400" />
-            <h3 className="text-base font-semibold">
-              AI-Generated Questions
-            </h3>
-            <span className="text-[10px] text-[#55556a]">
-              Personalized to candidate&apos;s exact experience
-            </span>
-          </div>
-
-          <div className="space-y-4">
-            {interviewPrep.questions.map((question, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 + i * 0.08 }}
-                className="flex gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-white/[0.08] transition-all group"
-              >
-                <div className="w-8 h-8 rounded-lg bg-violet-600/10 border border-violet-500/20 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-mono font-bold text-violet-400">
-                    Q{i + 1}
-                  </span>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-[#8888a0] leading-relaxed">
-                    {question}
-                  </p>
-                  <div className="flex items-center gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="text-[10px] text-violet-400 hover:text-violet-300 flex items-center gap-1">
-                      <BookOpen className="w-3 h-3" />
-                      See related work
-                    </button>
-                    <span className="text-[10px] text-[#55556a]">•</span>
-                    <button className="text-[10px] text-[#55556a] hover:text-[#8888a0] flex items-center gap-1">
-                      Regenerate
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Insights sidebar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="lg:col-span-2 space-y-4"
-        >
-          {/* Key Insights */}
-          <div className="glass-card p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Star className="w-5 h-5 text-amber-400" />
-              <h3 className="text-sm font-semibold">Key Insights</h3>
-            </div>
-            <div className="space-y-3">
-              {interviewPrep.insights.map((insight, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.4 + i * 0.08 }}
-                  className="flex gap-3 text-xs text-[#8888a0]"
-                >
-                  <div className="w-1 h-1 rounded-full bg-amber-500 mt-1.5 shrink-0" />
-                  <span className="leading-relaxed">{insight}</span>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Stats */}
-          <div className="glass-card p-6">
-            <h3 className="text-sm font-semibold mb-4">Quick Stats</h3>
-            <div className="space-y-3">
-              {[
-                {
-                  label: "Match Score",
-                  value: `${candidate.matchScore}%`,
-                  color: "#8b5cf6",
-                },
-                {
-                  label: "Culture Fit",
-                  value: `${candidate.cultureScore}%`,
-                  color: "#10b981",
-                },
-                {
-                  label: "Experience",
-                  value: candidate.experience,
-                  color: "#06b6d4",
-                },
-                {
-                  label: "Availability",
-                  value: "Immediate",
-                  color: "#f59e0b",
-                },
-              ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="flex items-center justify-between"
-                >
-                  <span className="text-xs text-[#55556a]">{stat.label}</span>
-                  <span
-                    className="text-sm font-semibold"
-                    style={{ color: stat.color }}
-                  >
-                    {stat.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Action */}
-          <div className="glass-card p-6 text-center">
-            <MessageSquare className="w-8 h-8 text-[#55556a] mx-auto mb-3" />
-            <p className="text-xs text-[#55556a] mb-4">
-              This cheat sheet was auto-delivered to your Slack DM at 2:45 PM
-            </p>
-            <button className="text-xs font-medium text-violet-400 hover:text-violet-300 flex items-center gap-1 mx-auto">
-              <ExternalLink className="w-3 h-3" />
-              Open in Slack
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    </div>
-  );
+    );
 }
